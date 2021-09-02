@@ -1,0 +1,25 @@
+version: '3.1'
+networks:
+  banco:
+    ipam:
+      config:
+        - subnet: 192.168.3.0/24
+          gateway: 192.168.3.1
+services:
+  projeto_dw_vendas:
+    image: postgres
+    restart: on-failure
+    ports: 
+      - 5432:5432
+    environment:
+      POSTGRES_USER: itix
+      POSTGRES_PASSWORD: itix123
+      POSTGRES_DB: exercicios
+    volumes: 
+      - /etc/postgresql
+      - /var/log/postgresql
+      - ./praticas-bi:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks: 
+      banco:
+        ipv4_address: 192.168.3.2
