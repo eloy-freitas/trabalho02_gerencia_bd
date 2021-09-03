@@ -6,6 +6,11 @@ def create_stage_csv(stage_name, file_path, delimiter, conn_output):
                                                                    if_exists="replace")
 
 
+def create_stage_csv(stage_name, file_path, delimiter, conn_output):
+    pd.read_csv(file_path, sep=delimiter, low_memory=False).to_sql(name=stage_name, con=conn_output, schema="stage",
+                                                                   if_exists="replace", index=False)
+
+
 def merge_input(left, right, left_on, right_on, surrogate_key, suff):
     dict_na = right.query(f"{surrogate_key} == -3").to_dict('index')
 
@@ -53,3 +58,17 @@ def read_table(conn, schema, table_name, columns=None, where=None, distinct=Fals
     response = pd.read_sql_query(query, conn)
 
     return response
+
+
+def find_sk(conn, schema_name, table_name, sk_name):
+    """
+    Retorna um valor válido da SK da tabela consultada
+    :param conn:
+    :param schema_name: Schema onde se encontra a tabela
+    :param table_name: Nome da tabela onde se encontra a coluna a ser verificada
+    :param sk_name: Nome da coluna onde buscamos o id máximo.
+    """
+    result = conn.execute(f'SELECT MAX({sk_name}) FROM {schema_name}.{table_name}')
+    index_sk = result.fetchone()[0] + 1
+
+    return index_sk
