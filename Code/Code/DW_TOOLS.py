@@ -3,7 +3,7 @@ import pandas as pd
 
 def create_stage_csv(stage_name, file_path, delimiter, conn_output):
     pd.read_csv(file_path, sep=delimiter, low_memory=False).to_sql(name=stage_name, con=conn_output, schema="stage",
-                                                                   if_exists="replace")
+                                                                   if_exists="replace", index=False)
 
 
 def merge_input(left, right, left_on, right_on, surrogate_key, suff):
