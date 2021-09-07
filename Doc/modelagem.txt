@@ -2,7 +2,8 @@ dim_produto{
 	sk_produto,
 	cd_produto,
 	ds_produto,
-	qtd_produto
+	ds_categoria,
+	qtd_medida
 }
 
 dim_estabelecimento{
@@ -24,12 +25,6 @@ dim_bairro{
 	no_bairro
 }
 
-dim_categoria{
-	sk_categoria,
-	cd_categoria,
-	ds_categoria
-}
-
 dim_unidade_medida{
 	sk_unidade_medida,
 	cd_unidade_medida,
@@ -48,7 +43,6 @@ fato_pesquisa{
 	sk_produto,
 	sk_estabelecimento,
 	sk_bairro,
-	sk_categoria,
 	sk_unidade_medida,
 	sk_embalagem,
 	vl_preco_pesquisado,

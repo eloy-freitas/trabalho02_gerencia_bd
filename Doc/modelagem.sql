@@ -2,7 +2,8 @@ create table if not exists modelagem.d_produto(
 	sk_produto bigint primary key not null,
 	cd_produto bigint not null,
 	ds_produto varchar(80) not null,
-	qtd_produto_embalagem varchar(12) not null
+	ds_categoria varchar(60),
+	qtd_medida varchar(12) not null
 );
 
 create table if not exists modelagem.d_estabelecimento(
@@ -19,15 +20,12 @@ create table if not exists modelagem.d_estabelecimento(
 
 create table if not exists modelagem.d_bairro(
 	sk_bairro bigint primary key not null,
+	cd_bairro bigint not null,
 	no_bairro varchar(20) not null,
 	no_cidade varchar(30) not null
 );
 
-create table if not exists modelagem.d_categoria(
-	sk_categoria bigint primary key not null,
-	cd_categoria bigint not null,
-	ds_categoria varchar(60) not null
-);
+drop table modelagem.d_bairro ;
 
 create table if not exists modelagem.d_unidade_medida(
 	sk_unidade_medida bigint primary key not null,
@@ -47,7 +45,6 @@ create table if not exists modelagem.f_pesquisa(
 	sk_produto bigint not null,
 	sk_estabelecimento bigint not null,
 	sk_bairro bigint not null,
-	sk_categoria bigint not null,
 	sk_unidade_medida bigint not null,
 	sk_embalagem bigint not null,
 	vl_preco_pesquisado float not null,
@@ -55,12 +52,11 @@ create table if not exists modelagem.f_pesquisa(
 	foreign key (sk_produto) references modelagem.d_produto (sk_produto),
 	foreign key (sk_estabelecimento) references modelagem.d_estabelecimento (sk_estabelecimento),
 	foreign key (sk_bairro) references modelagem.d_bairro (sk_bairro),
-	foreign key (sk_categoria) references modelagem.d_categoria (sk_categoria),
 	foreign key (sk_unidade_medida) references modelagem.d_unidade_medida (sk_unidade_medida),
 	foreign key (sk_embalagem) references modelagem.d_embalagem (sk_embalagem)
 );
 
-
+drop table modelagem.f_pesquisa ;
 
 
 
