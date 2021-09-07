@@ -43,21 +43,21 @@ def treat(conn, stg_dados, dim_exists):
 
     dim_bairro = (
         stg_dados.
-            filter(columns_select).
-            rename(columns=columns_name).
-            assign(
-                ds_bairro= lambda x: x.ds_bairro.apply(
-                    lambda y: 'Não informado' if y is None else y),
-                no_cidade=lambda x: x.no_cidade.apply(
-                    lambda y: 'CURITIBA' if y is None else y)).
-            assign(
-                ds_bairro=lambda x: x.ds_bairro.apply(
-                    lambda y: y.replace('      ', ' '))).
-            assign(
-                cd_bairro=lambda x: x.cd_bairro.astype('int64'),
-                ds_bairro=lambda x: x.ds_bairro.astype(str),
-                no_cidade=lambda x: x.no_cidade.astype(str)
-        )
+        filter(columns_select).
+        rename(columns=columns_name).
+        assign(
+            ds_bairro=lambda x: x.ds_bairro.apply(
+                lambda y: 'Não informado' if y is None else y),
+            no_cidade=lambda x: x.no_cidade.apply(
+                lambda y: 'CURITIBA' if y is None else y)).
+        assign(
+            ds_bairro=lambda x: x.ds_bairro.apply(
+                lambda y: y.replace('      ', ' '))).
+        assign(
+            cd_bairro=lambda x: x.cd_bairro.astype('int64'),
+            ds_bairro=lambda x: x.ds_bairro.astype(str),
+            no_cidade=lambda x: x.no_cidade.astype(str)
+        ).drop_duplicates()
     )
 
     if dim_exists:
@@ -110,16 +110,16 @@ def run(conn):
     if not stg_bairro.empty:
         (
             treat(stg_dados=stg_bairro, conn=conn, dim_exists=fl_dim).
-                pipe(load, conn=conn)
+            pipe(load, conn=conn)
         )
 
 
 if __name__ == '__main__':
-    #conn_output = con.create_connection(server='localhost', database='trabalho_gbd', password='itix.123',
-    #                                    username='postgres', port=5432)
+    conn_output = con.create_connection(server='localhost', database='trabalho_gbd', password='itix.123',
+                                        username='postgres', port=5432)
 
-    conn_output = con.create_connection(server='192.168.3.2', database='trabalho2', password='itix123',
-                                        username='itix', port=5432)
+    # conn_output = con.create_connection(server='192.168.3.2', database='trabalho2', password='itix123',
+    #                                    username='itix', port=5432)
 
     pd.set_option('display.max_columns', 110)
     pd.set_option('display.max_rows', 110)
