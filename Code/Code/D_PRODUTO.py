@@ -10,8 +10,7 @@ import DW_TOOLS as dwt
 
 def extract(conn, dim_exists):
     stg_produto = dwt.read_table(conn=conn, schema='stage', table_name='stg_produto',
-                                 columns=['CODIGO_PRODUTO', 'PRODUTO_DESCRICAO', 'CATEGORIA_PRODUTO',
-                                          'TIPO_EMBALAGEM_PRODUTO_SIGLA', 'UNIDADE'])
+                                 columns=['CODIGO_PRODUTO', 'PRODUTO_DESCRICAO', 'CATEGORIA_PRODUTO', 'UNIDADE'])
 
     if dim_exists:
 
@@ -30,13 +29,11 @@ def extract(conn, dim_exists):
 
 def treat(stg_produto, conn, dim_exists):
 
-    columns_select = ['CODIGO_PRODUTO', 'PRODUTO_DESCRICAO', 'CATEGORIA_PRODUTO', 'TIPO_EMBALAGEM_PRODUTO_SIGLA',
-                      'UNIDADE']
+    columns_select = ['CODIGO_PRODUTO', 'PRODUTO_DESCRICAO', 'CATEGORIA_PRODUTO', 'UNIDADE']
 
     columns_name = {'CODIGO_PRODUTO': 'cd_produto',
                     'PRODUTO_DESCRICAO': 'ds_produto',
                     'CATEGORIA_PRODUTO': 'ds_categoria',
-                    'TIPO_EMBALAGEM_PRODUTO_SIGLA': 'ds_embalagem',
                     'UNIDADE': 'qtd_medida'}
 
     # print(stg_produto.dtypes)
@@ -46,7 +43,6 @@ def treat(stg_produto, conn, dim_exists):
         filter(columns_select).
         rename(columns=columns_name).
         assign(
-            ds_unidade=lambda x: x.qtd_medida.str.strip().apply(lambda y: y[-2:]),
             qtd_medida=lambda x: x.qtd_medida.str.strip().apply(lambda y: y[:-2]).astype('float64')
         )
     )
@@ -61,9 +57,9 @@ def treat(stg_produto, conn, dim_exists):
         dim_produto.insert(0, "sk_produto", range(1, 1 + len(dim_produto)))
 
         dim_produto = (
-            pd.DataFrame([[-1, -1, "Não informado", "Não informado", "Não informado", -1, "Não informado"],
-                          [-2, -2, "Não aplicável", "Não aplicável", "Não aplicável", -2, "Não aplicável"],
-                          [-3, -3, "Desconhecido", "Desconhecido", "Desconhecido", -3, "Desconhecido"]
+            pd.DataFrame([[-1, -1, "Não informado", "Não informado", -1],
+                          [-2, -2, "Não aplicável", "Não aplicável", -2],
+                          [-3, -3, "Desconhecido", "Desconhecido", -3]
                           ], columns=dim_produto.columns).append(dim_produto)
         )
 
@@ -77,9 +73,7 @@ def load(dim_produto, conn):
         "cd_produto": Integer(),
         "ds_produto": String(),
         "ds_categoria": String(),
-        "ds_embalagem": String(),
         "qtd_medida": Float(),
-        "ds_unidade": String()
     }
 
     (
