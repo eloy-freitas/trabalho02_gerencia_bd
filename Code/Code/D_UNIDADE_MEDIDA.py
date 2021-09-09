@@ -2,7 +2,7 @@ import pandas as pd
 from pandasql import sqldf
 
 from sqlalchemy import inspect
-from sqlalchemy.types import Integer, String, Float
+from sqlalchemy.types import Integer, String
 
 import CONNECTION as con
 import DW_TOOLS as dwt
@@ -39,15 +39,15 @@ def treat(stg_unidade_medida, conn, dim_exists):
 
     dim_unidade_medida = (
         stg_unidade_medida.
-            filter(columns_select).
-            rename(columns=columns_name).
-            assign(
+        filter(columns_select).
+        rename(columns=columns_name).
+        assign(
             cd_unidade_medida=lambda x: x.cd_unidade_medida.astype('int64')
         ).drop_duplicates()
     )
 
     if dim_exists:
-        sk_max = dwt.find_sk(con=conn, schema_name='dw', table_name='d_unidade_medida', sk_name='sk_unidade_medida')
+        sk_max = dwt.find_sk(conn=conn, schema_name='dw', table_name='d_unidade_medida', sk_name='sk_unidade_medida')
         dim_unidade_medida.insert(0, 'sk_unidade_medida', range(sk_max, sk_max + len(dim_unidade_medida)))
 
     else:
@@ -74,8 +74,8 @@ def load(dim_unidade_medida, conn):
 
     (
         dim_unidade_medida.
-            astype('string').
-            to_sql(name='d_unidade_medida', con=conn, schema='dw', if_exists='append', index=False, dtype=data_tyes)
+        astype('string').
+        to_sql(name='d_unidade_medida', con=conn, schema='dw', if_exists='append', index=False, dtype=data_tyes)
     )
 
 
@@ -87,7 +87,7 @@ def run(conn):
     if not stg_unidade_medida.empty:
         (
             treat(stg_unidade_medida=stg_unidade_medida, conn=conn, dim_exists=fl_dim).
-                pipe(load, conn=conn)
+            pipe(load, conn=conn)
         )
 
 

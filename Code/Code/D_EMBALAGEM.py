@@ -2,7 +2,7 @@ import pandas as pd
 from pandasql import sqldf
 
 from sqlalchemy import inspect
-from sqlalchemy.types import Integer, String, Float
+from sqlalchemy.types import Integer, String
 
 import CONNECTION as con
 import DW_TOOLS as dwt
@@ -38,9 +38,9 @@ def treat(stg_embalagem, conn, dim_exists):
 
     dim_embalagem = (
         stg_embalagem.
-            filter(columns_select).
-            rename(columns=columns_name).
-            assign(
+        filter(columns_select).
+        rename(columns=columns_name).
+        assign(
             cd_embalagem=lambda x: x.cd_embalagem.astype('int64')
         ).drop_duplicates()
     )
@@ -73,8 +73,8 @@ def load(dim_embalagem, conn):
 
     (
         dim_embalagem.
-            astype('string').
-            to_sql(name='d_embalagem', con=conn, schema='dw', if_exists='append', index=False, dtype=data_types)
+        astype('string').
+        to_sql(name='d_embalagem', con=conn, schema='dw', if_exists='append', index=False, dtype=data_types)
     )
 
 
@@ -86,7 +86,7 @@ def run(conn):
     if not stg_embalagem.empty:
         (
             treat(stg_embalagem=stg_embalagem, conn=conn, dim_exists=fl_dim).
-                pipe(load, conn=conn)
+            pipe(load, conn=conn)
         )
 
 
