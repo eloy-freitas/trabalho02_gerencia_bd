@@ -53,7 +53,7 @@ def treat(stg_dados, conn, dim_exists):
             nu_endereco=lambda x: x.nu_endereco.astype('int64'),
             nu_telefone=lambda x: x.nu_telefone.astype('string'),
         )
-    )
+    ).drop_duplicates()
 
     if dim_exists:
         sk_max = dwt.find_sk(conn=conn, schema_name='dw', table_name='d_estabelecimento', sk_name='sk_estabelecimento')
@@ -110,6 +110,9 @@ def run(conn):
 if __name__ == '__main__':
     conn_output = con.create_connection(server='localhost', database='trabalho_gbd', password='14159265',
                                         username='postgres', port=5432)
+
+    #conn_output = con.create_connection(server='192.168.3.2', database='trabalho2', password='itix123',
+    #                                    username='itix', port=5432)
 
     pd.set_option('display.max_columns', 110)
     pd.set_option('display.max_rows', 110)
