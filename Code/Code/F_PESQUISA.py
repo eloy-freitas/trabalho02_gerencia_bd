@@ -1,10 +1,14 @@
+from datetime import datetime
+
 import pandas as pd
+from sqlalchemy import inspect
 from sqlalchemy.types import Float, Date, DateTime, Integer
+
 import CONNECTION as con
 import DW_TOOLS as dwt
 
 
-def extract(conn):
+def extract(conn, date):
 
     stg_pesquisa = (
         dwt.read_table(
@@ -13,7 +17,8 @@ def extract(conn):
             table_name='stg_disque_economia',
             columns=["DATA_PESQUISA", "PRECO_PESQUISADO", "CODIGO_ESTABELECIMENTO",
                      "CODIGO_BAIRRO", "CODIGO_PRODUTO", "CODIGO_TIPO_UNIDADE_MEDIDA_PRODUTO",
-                     "CODIGO_TIPO_EMBALAGEM_PRODUTO"]).
+                     "CODIGO_TIPO_EMBALAGEM_PRODUTO"],
+            where=f'"DATA_PESQUISA" > \'{date}\'').
         assign(
             DATA_PESQUISA=lambda x: pd.to_datetime(x.DATA_PESQUISA, format="%Y-%m-%d"),
             CODIGO_PRODUTO=lambda x: x.CODIGO_PRODUTO.astype('int64'),
@@ -24,110 +29,112 @@ def extract(conn):
         )
     )
 
-    d_data = (
-        dwt.read_table(
-            conn=conn,
-            schema='dw',
-            table_name='d_data',
-            columns=['sk_data', 'dt_referencia']
-        ).
-        assign(
-            dt_referencia=lambda x: pd.to_datetime(x.dt_referencia, format="%Y-%m-%d")
+    if not stg_pesquisa.empty:
+
+        d_data = (
+            dwt.read_table(
+                conn=conn,
+                schema='dw',
+                table_name='d_data',
+                columns=['sk_data', 'dt_referencia']
+            ).
+            assign(
+                dt_referencia=lambda x: pd.to_datetime(x.dt_referencia, format="%Y-%m-%d")
+            )
         )
-    )
 
-    d_produto = (
-        dwt.read_table(
-            conn=conn,
-            schema='dw',
-            table_name='d_produto',
-            columns=['sk_produto', 'cd_produto']
+        d_produto = (
+            dwt.read_table(
+                conn=conn,
+                schema='dw',
+                table_name='d_produto',
+                columns=['sk_produto', 'cd_produto']
+            )
         )
-    )
 
-    d_bairro = (
-        dwt.read_table(
-            conn=conn,
-            schema='dw',
-            table_name='d_bairro',
-            columns=['sk_bairro', 'cd_bairro']
+        d_bairro = (
+            dwt.read_table(
+                conn=conn,
+                schema='dw',
+                table_name='d_bairro',
+                columns=['sk_bairro', 'cd_bairro']
+            )
         )
-    )
 
-    d_estabelecimento = (
-        dwt.read_table(
-            conn=conn,
-            schema='dw',
-            table_name='d_estabelecimento',
-            columns=['sk_estabelecimento', 'cd_estabelecimento']
+        d_estabelecimento = (
+            dwt.read_table(
+                conn=conn,
+                schema='dw',
+                table_name='d_estabelecimento',
+                columns=['sk_estabelecimento', 'cd_estabelecimento']
+            )
         )
-    )
 
-    d_embalagem = (
-        dwt.read_table(
-            conn=conn,
-            schema='dw',
-            table_name='d_embalagem',
-            columns=['sk_embalagem', 'cd_embalagem']
+        d_embalagem = (
+            dwt.read_table(
+                conn=conn,
+                schema='dw',
+                table_name='d_embalagem',
+                columns=['sk_embalagem', 'cd_embalagem']
+            )
         )
-    )
 
-    d_unidade_medida = (
-        dwt.read_table(
-            conn=conn,
-            schema='dw',
-            table_name='d_unidade_medida',
-            columns=['sk_unidade_medida', 'cd_unidade_medida']
+        d_unidade_medida = (
+            dwt.read_table(
+                conn=conn,
+                schema='dw',
+                table_name='d_unidade_medida',
+                columns=['sk_unidade_medida', 'cd_unidade_medida']
+            )
         )
-    )
 
-    tbl_pesquisa = (
-        stg_pesquisa.
-        pipe(
-            dwt.merge_input,
-            right=d_data,
-            left_on="DATA_PESQUISA",
-            right_on="dt_referencia",
-            suff=["-1", "_2"],
-            surrogate_key="sk_data").
-        pipe(
-            dwt.merge_input,
-            right=d_produto,
-            left_on="CODIGO_PRODUTO",
-            right_on="cd_produto",
-            suff=["_3", "_4"],
-            surrogate_key="sk_produto").
-        pipe(
-            dwt.merge_input,
-            right=d_bairro,
-            left_on="CODIGO_BAIRRO",
-            right_on="cd_bairro",
-            suff=["_5", "_6"],
-            surrogate_key="sk_bairro").
-        pipe(
-            dwt.merge_input,
-            right=d_estabelecimento,
-            left_on="CODIGO_ESTABELECIMENTO",
-            right_on="cd_estabelecimento",
-            suff=["_7", "_8"],
-            surrogate_key="sk_estabelecimento").
-        pipe(
-            dwt.merge_input,
-            right=d_unidade_medida,
-            left_on="CODIGO_TIPO_UNIDADE_MEDIDA_PRODUTO",
-            right_on="cd_unidade_medida",
-            suff=["_9", "_10"],
-            surrogate_key="sk_unidade_medida").
-        pipe(
-            dwt.merge_input,
-            right=d_embalagem,
-            left_on="CODIGO_TIPO_EMBALAGEM_PRODUTO",
-            right_on="cd_embalagem",
-            suff=["_11", "_12"],
-            surrogate_key="sk_embalagem")
-    )
+        stg_pesquisa = (
+            stg_pesquisa.
+            pipe(
+                dwt.merge_input,
+                right=d_data,
+                left_on="DATA_PESQUISA",
+                right_on="dt_referencia",
+                suff=["-1", "_2"],
+                surrogate_key="sk_data").
+            pipe(
+                dwt.merge_input,
+                right=d_produto,
+                left_on="CODIGO_PRODUTO",
+                right_on="cd_produto",
+                suff=["_3", "_4"],
+                surrogate_key="sk_produto").
+            pipe(
+                dwt.merge_input,
+                right=d_bairro,
+                left_on="CODIGO_BAIRRO",
+                right_on="cd_bairro",
+                suff=["_5", "_6"],
+                surrogate_key="sk_bairro").
+            pipe(
+                dwt.merge_input,
+                right=d_estabelecimento,
+                left_on="CODIGO_ESTABELECIMENTO",
+                right_on="cd_estabelecimento",
+                suff=["_7", "_8"],
+                surrogate_key="sk_estabelecimento").
+            pipe(
+                dwt.merge_input,
+                right=d_unidade_medida,
+                left_on="CODIGO_TIPO_UNIDADE_MEDIDA_PRODUTO",
+                right_on="cd_unidade_medida",
+                suff=["_9", "_10"],
+                surrogate_key="sk_unidade_medida").
+            pipe(
+                dwt.merge_input,
+                right=d_embalagem,
+                left_on="CODIGO_TIPO_EMBALAGEM_PRODUTO",
+                right_on="cd_embalagem",
+                suff=["_11", "_12"],
+                surrogate_key="sk_embalagem")
+        )
 
-    return tbl_pesquisa
+    return stg_pesquisa
 
 
 def treat(tbl_pesquisa):
@@ -182,7 +189,16 @@ def load(f_pesquisa, conn):
 
 
 def run(conn):
-    tbl_fact = extract(conn)
+
+    if inspect(conn).has_table(table_name='f_pesquisa', schema='dw'):
+        result = conn.execute('SELECT MAX("dt_pesquisa") FROM dw."f_pesquisa"')
+        dt_max = str(result.fetchone()[0])
+    else:
+        dt_max = '1900-01-01'
+
+    load_date = datetime.strptime(dt_max, "%Y-%m-%d")
+
+    tbl_fact = extract(conn, date=load_date)
 
     if tbl_fact.shape[0] != 0:
         (

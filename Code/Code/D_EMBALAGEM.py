@@ -59,7 +59,6 @@ def treat(stg_embalagem, conn, dim_exists):
                           ], columns=dim_embalagem.columns).append(dim_embalagem)
         )
 
-    print(dim_embalagem)
     return dim_embalagem
 
 
