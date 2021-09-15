@@ -60,7 +60,6 @@ def treat(stg_unidade_medida, conn, dim_exists):
                           ], columns=dim_unidade_medida.columns).append(dim_unidade_medida)
         )
 
-    print(dim_unidade_medida)
     return dim_unidade_medida
 
 
