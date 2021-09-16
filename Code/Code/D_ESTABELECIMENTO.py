@@ -51,7 +51,7 @@ def treat(stg_dados, conn, dim_exists):
             cd_estabelecimento=lambda x: x.cd_estabelecimento.astype('int64'),
             cd_filial=lambda x: x.cd_filial.astype('int64'),
             nu_endereco=lambda x: x.nu_endereco.astype('int64'),
-            nu_telefone=lambda x: x.nu_telefone.astype('int64').astype('string'),
+            nu_telefone=lambda x: x.nu_telefone.astype('string'),
         )
     ).drop_duplicates()
 

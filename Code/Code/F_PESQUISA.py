@@ -20,7 +20,7 @@ def extract(conn, date):
                      "CODIGO_TIPO_EMBALAGEM_PRODUTO"],
             where=f'"DATA_PESQUISA" > \'{date}\'').
         assign(
-            DATA_PESQUISA=lambda x: pd.to_datetime(x.DATA_PESQUISA, format="%Y-%m-%d"),
+            DATA_PESQUISA=lambda x: pd.to_datetime(x.DATA_PESQUISA, format="%d/%m/%Y"),
             CODIGO_PRODUTO=lambda x: x.CODIGO_PRODUTO.astype('int64'),
             CODIGO_ESTABELECIMENTO=lambda x: x.CODIGO_ESTABELECIMENTO.astype('int64'),
             CODIGO_BAIRRO=lambda x: x.CODIGO_BAIRRO.astype('int64'),
