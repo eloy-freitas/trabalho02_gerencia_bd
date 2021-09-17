@@ -12,19 +12,13 @@ def extract(conn, dim_exists):
     stg_produto = dwt.read_table(conn=conn, schema='stage', table_name='stg_produto',
                                  columns=['CODIGO_PRODUTO', 'PRODUTO_DESCRICAO', 'CATEGORIA_PRODUTO', 'UNIDADE'])
 
-    stg_categoria = dwt.read_table(conn=conn, schema='stage', table_name='stg_disque_economia',
-                                   columns=['CODIGO_PRODUTO', 'CODIGO_CATEGORIA_PRODUTO'])
-
-    stg_produto = stg_produto.merge(right=stg_categoria, on='CODIGO_PRODUTO', how='inner')
-
     if dim_exists:
 
         query = """
             SELECT stg.* 
             FROM stg_produto stg 
             LEFT JOIN dw.d_produto dp 
-            ON (stg."CODIGO_PRODUTO" = dp.cd_produto::INTEGER 
-            AND stg."CODIGO_CATEGORIA_PRODUTO" = dp.cd_categoria::INTEGER) 
+            ON stg."CODIGO_PRODUTO" = dp.cd_produto
             WHERE dp.cd_produto IS NULL
         """
 
@@ -35,10 +29,9 @@ def extract(conn, dim_exists):
 
 def treat(stg_produto, conn, dim_exists):
 
-    columns_select = ['cd_produto_categoria', 'cd_produto', 'cd_categoria', 'ds_produto', 'ds_categoria', 'qtd_medida']
+    columns_select = ['CODIGO_PRODUTO', 'PRODUTO_DESCRICAO', 'CATEGORIA_PRODUTO', 'UNIDADE']
 
     columns_name = {'CODIGO_PRODUTO': 'cd_produto',
-                    'CODIGO_CATEGORIA_PRODUTO': 'cd_categoria',
                     'PRODUTO_DESCRICAO': 'ds_produto',
                     'CATEGORIA_PRODUTO': 'ds_categoria',
                     'UNIDADE': 'qtd_medida'}
@@ -47,14 +40,13 @@ def treat(stg_produto, conn, dim_exists):
 
     dim_produto = (
         stg_produto.
+        filter(columns_select).
         rename(columns=columns_name).
         assign(
-            cd_categoria=lambda x: x.cd_categoria.astype('int64').apply(lambda y: f'{y:0>2}'),
-            cd_produto=lambda x: x.cd_produto.astype('int64').apply(lambda y: f'{y:0>5}'),
-            cd_produto_categoria=lambda x: x.cd_categoria + x.cd_produto,
+            cd_produto=lambda x: x.cd_produto.astype('int64'),
             qtd_medida=lambda x: x.qtd_medida.str.strip().apply(lambda y: y[:-2]).astype('float64')
-        ).filter(columns_select).
-        drop_duplicates()
+        ).
+        drop_duplicates('cd_produto')
     )
 
     if dim_exists:
@@ -65,9 +57,9 @@ def treat(stg_produto, conn, dim_exists):
         dim_produto.insert(0, "sk_produto", range(1, 1 + len(dim_produto)))
 
         dim_produto = (
-            pd.DataFrame([[-1, -1, -1, -1, "Não informado", "Não informado", -1],
-                          [-2, -2, -2, -2, "Não aplicável", "Não aplicável", -2],
-                          [-3, -3, -3, -3, "Desconhecido", "Desconhecido", -3]
+            pd.DataFrame([[-1, -1, "Não informado", "Não informado", -1],
+                          [-2, -2, "Não aplicável", "Não aplicável", -2],
+                          [-3, -3, "Desconhecido", "Desconhecido", -3]
                           ], columns=dim_produto.columns).append(dim_produto)
         )
 
@@ -78,9 +70,7 @@ def load(dim_produto, conn):
 
     data_types = {
         "sk_produto": Integer(),
-        "cd_produto_categoria": String(),
-        "cd_categoria": String(),
-        "cd_produto": String(),
+        "cd_produto": Integer(),
         "ds_produto": String(),
         "ds_categoria": String(),
         "qtd_medida": Float(),
