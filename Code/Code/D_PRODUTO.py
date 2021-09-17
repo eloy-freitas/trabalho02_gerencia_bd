@@ -110,7 +110,7 @@ if __name__ == '__main__':
     # conn_output = con.create_connection(server='localhost', database='trabalho_gbd', password='14159265',
     #                                     username='postgres', port=5432)
 
-    conn_output = con.create_connection(server='localhost', database='trabalho_gbd', password='itix.123',
+    conn_output = con.create_connection(server='localhost', database='trabalho_gbd', password='14159265',
                                         username='postgres', port=5432)
 
     pd.set_option('display.max_columns', 110)
