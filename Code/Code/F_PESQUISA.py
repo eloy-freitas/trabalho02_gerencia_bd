@@ -15,14 +15,16 @@ def extract(conn, date):
             conn=conn,
             schema='stage',
             table_name='stg_disque_economia',
-            columns=["DATA_PESQUISA", "PRECO_PESQUISADO", "CODIGO_ESTABELECIMENTO",
-                     "CODIGO_BAIRRO", "CODIGO_PRODUTO", "CODIGO_TIPO_UNIDADE_MEDIDA_PRODUTO",
-                     "CODIGO_TIPO_EMBALAGEM_PRODUTO"],
+            columns=["DATA_PESQUISA", "PRECO_PESQUISADO", "CODIGO_ESTABELECIMENTO", "CODIGO_BAIRRO", "CODIGO_PRODUTO",
+                     "CODIGO_CATEGORIA_PRODUTO", "CODIGO_TIPO_UNIDADE_MEDIDA_PRODUTO", "CODIGO_TIPO_EMBALAGEM_PRODUTO",
+                     "CODIGO_ESTABELECIMENTO_FILIAL"],
             where=f'"DATA_PESQUISA" > \'{date}\'').
         assign(
-            DATA_PESQUISA=lambda x: pd.to_datetime(x.DATA_PESQUISA, format="%Y-%m-%d"),
+            DATA_PESQUISA=lambda x: pd.to_datetime(x.DATA_PESQUISA, format="%d/%m/%Y"),
             CODIGO_PRODUTO=lambda x: x.CODIGO_PRODUTO.astype('int64'),
+            CODIGO_CATEGORIA_PRODUTO=lambda x: x.CODIGO_CATEGORIA_PRODUTO.astype('int64'),
             CODIGO_ESTABELECIMENTO=lambda x: x.CODIGO_ESTABELECIMENTO.astype('int64'),
+            CODIGO_ESTABELECIMENTO_FILIAL=lambda x: x.CODIGO_ESTABELECIMENTO_FILIAL.astype('int64'),
             CODIGO_BAIRRO=lambda x: x.CODIGO_BAIRRO.astype('int64'),
             CODIGO_TIPO_UNIDADE_MEDIDA_PRODUTO=lambda x: x.CODIGO_TIPO_UNIDADE_MEDIDA_PRODUTO.astype('int64'),
             CODIGO_TIPO_EMBALAGEM_PRODUTO=lambda x: x.CODIGO_TIPO_EMBALAGEM_PRODUTO.astype('int64')
@@ -48,7 +50,10 @@ def extract(conn, date):
                 conn=conn,
                 schema='dw',
                 table_name='d_produto',
-                columns=['sk_produto', 'cd_produto']
+                columns=['sk_produto', 'cd_produto', 'cd_categoria']
+            ).assign(
+                cd_produto=lambda x: x.cd_produto.astype('int64'),
+                cd_categoria=lambda x: x.cd_categoria.astype('int64')
             )
         )
 
@@ -66,7 +71,10 @@ def extract(conn, date):
                 conn=conn,
                 schema='dw',
                 table_name='d_estabelecimento',
-                columns=['sk_estabelecimento', 'cd_estabelecimento']
+                columns=['sk_estabelecimento', 'cd_rede', 'cd_filial']
+            ).assign(
+                cd_rede=lambda x: x.cd_rede.astype('int64'),
+                cd_filial=lambda x: x.cd_filial.astype('int64')
             )
         )
 
@@ -100,8 +108,8 @@ def extract(conn, date):
             pipe(
                 dwt.merge_input,
                 right=d_produto,
-                left_on="CODIGO_PRODUTO",
-                right_on="cd_produto",
+                left_on=["CODIGO_PRODUTO", "CODIGO_CATEGORIA_PRODUTO"],
+                right_on=["cd_produto", "cd_categoria"],
                 suff=["_3", "_4"],
                 surrogate_key="sk_produto").
             pipe(
@@ -114,8 +122,8 @@ def extract(conn, date):
             pipe(
                 dwt.merge_input,
                 right=d_estabelecimento,
-                left_on="CODIGO_ESTABELECIMENTO",
-                right_on="cd_estabelecimento",
+                left_on=["CODIGO_ESTABELECIMENTO", "CODIGO_ESTABELECIMENTO_FILIAL"],
+                right_on=["cd_rede", "cd_filial"],
                 suff=["_7", "_8"],
                 surrogate_key="sk_estabelecimento").
             pipe(
