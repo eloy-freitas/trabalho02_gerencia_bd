@@ -28,11 +28,11 @@ def create_stages(conn):
 if __name__ == '__main__':
     conn_output = con.create_connection(server='localhost',
                                         database='trabalho_gbd',
-                                        password='itix.123',
+                                        password='14159265',
                                         username='postgres',
                                         port=5432)
 
-    # create_stages(conn=conn_output)
+    create_stages(conn=conn_output)
 
     dd.run(conn=conn_output)
     db.run(conn=conn_output)

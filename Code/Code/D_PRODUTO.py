@@ -18,7 +18,7 @@ def extract(conn, dim_exists):
             SELECT stg.* 
             FROM stg_produto stg 
             LEFT JOIN dw.d_produto dp 
-            ON stg."CODIGO_PRODUTO" = dp.cd_produto 
+            ON stg."CODIGO_PRODUTO" = dp.cd_produto
             WHERE dp.cd_produto IS NULL
         """
 
@@ -43,8 +43,10 @@ def treat(stg_produto, conn, dim_exists):
         filter(columns_select).
         rename(columns=columns_name).
         assign(
+            cd_produto=lambda x: x.cd_produto.astype('int64'),
             qtd_medida=lambda x: x.qtd_medida.str.strip().apply(lambda y: y[:-2]).astype('float64')
-        )
+        ).
+        drop_duplicates('cd_produto')
     )
 
     if dim_exists:
@@ -95,11 +97,11 @@ def run(conn):
 
 
 if __name__ == '__main__':
+    # conn_output = con.create_connection(server='localhost', database='trabalho_gbd', password='14159265',
+    #                                     username='postgres', port=5432)
+
     conn_output = con.create_connection(server='localhost', database='trabalho_gbd', password='14159265',
                                         username='postgres', port=5432)
-
-    # conn_output = con.create_connection(server='192.168.3.2', database='trabalho2', password='itix123',
-    #                                    username='itix', port=5432)
 
     pd.set_option('display.max_columns', 110)
     pd.set_option('display.max_rows', 110)

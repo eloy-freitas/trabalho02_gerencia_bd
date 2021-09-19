@@ -10,24 +10,30 @@ import DW_TOOLS as dwt
 
 def extract(conn, date):
 
+    print(date)
+
     stg_pesquisa = (
         dwt.read_table(
             conn=conn,
             schema='stage',
             table_name='stg_disque_economia',
-            columns=["DATA_PESQUISA", "PRECO_PESQUISADO", "CODIGO_ESTABELECIMENTO",
-                     "CODIGO_BAIRRO", "CODIGO_PRODUTO", "CODIGO_TIPO_UNIDADE_MEDIDA_PRODUTO",
-                     "CODIGO_TIPO_EMBALAGEM_PRODUTO"],
-            where=f'"DATA_PESQUISA" > \'{date}\'').
+            columns=["DATA_PESQUISA", "PRECO_PESQUISADO", "CODIGO_ESTABELECIMENTO", "CODIGO_BAIRRO", "CODIGO_PRODUTO",
+                     "CODIGO_TIPO_UNIDADE_MEDIDA_PRODUTO", "CODIGO_TIPO_EMBALAGEM_PRODUTO",
+                     "CODIGO_ESTABELECIMENTO_FILIAL"]).
         assign(
-            DATA_PESQUISA=lambda x: pd.to_datetime(x.DATA_PESQUISA, format="%Y-%m-%d"),
+            DATA_PESQUISA=lambda x: pd.to_datetime(x.DATA_PESQUISA, format="%d/%m/%Y"),
             CODIGO_PRODUTO=lambda x: x.CODIGO_PRODUTO.astype('int64'),
             CODIGO_ESTABELECIMENTO=lambda x: x.CODIGO_ESTABELECIMENTO.astype('int64'),
+            CODIGO_ESTABELECIMENTO_FILIAL=lambda x: x.CODIGO_ESTABELECIMENTO_FILIAL.astype('int64'),
             CODIGO_BAIRRO=lambda x: x.CODIGO_BAIRRO.astype('int64'),
             CODIGO_TIPO_UNIDADE_MEDIDA_PRODUTO=lambda x: x.CODIGO_TIPO_UNIDADE_MEDIDA_PRODUTO.astype('int64'),
             CODIGO_TIPO_EMBALAGEM_PRODUTO=lambda x: x.CODIGO_TIPO_EMBALAGEM_PRODUTO.astype('int64')
-        )
+        ).query("DATA_PESQUISA > @date")
     )
+
+    print(stg_pesquisa)
+    print(stg_pesquisa.DATA_PESQUISA.max())
+    print(stg_pesquisa.DATA_PESQUISA.min())
 
     if not stg_pesquisa.empty:
 
@@ -66,7 +72,10 @@ def extract(conn, date):
                 conn=conn,
                 schema='dw',
                 table_name='d_estabelecimento',
-                columns=['sk_estabelecimento', 'cd_estabelecimento']
+                columns=['sk_estabelecimento', 'cd_rede', 'cd_filial']
+            ).assign(
+                cd_rede=lambda x: x.cd_rede.astype('int64'),
+                cd_filial=lambda x: x.cd_filial.astype('int64')
             )
         )
 
@@ -114,8 +123,8 @@ def extract(conn, date):
             pipe(
                 dwt.merge_input,
                 right=d_estabelecimento,
-                left_on="CODIGO_ESTABELECIMENTO",
-                right_on="cd_estabelecimento",
+                left_on=["CODIGO_ESTABELECIMENTO", "CODIGO_ESTABELECIMENTO_FILIAL"],
+                right_on=["cd_rede", "cd_filial"],
                 suff=["_7", "_8"],
                 surrogate_key="sk_estabelecimento").
             pipe(
@@ -196,7 +205,7 @@ def run(conn):
     else:
         dt_max = '1900-01-01'
 
-    load_date = datetime.strptime(dt_max, "%Y-%m-%d")
+    load_date = datetime.strptime(dt_max, "%Y-%m-%d").date()
 
     tbl_fact = extract(conn, date=load_date)
 
